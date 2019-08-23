@@ -36,3 +36,4 @@ def get_button():
 
 def gpio_cleanup():
         GPIO.cleanup()
+        

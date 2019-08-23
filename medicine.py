@@ -230,7 +230,7 @@ def start_rfid_scanning():
             rfid_scan(int(id))
             time.sleep(1)
 
-    threading.Thread(go).start()
+    threading.Thread(target=go).start()
 
 
 def start_db():
