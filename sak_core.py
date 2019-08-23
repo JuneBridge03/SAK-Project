@@ -19,10 +19,15 @@ def start_sak_main_window():
     global NUMBER_OF_IMAGE_BUTTON
 
     medicine.start_db()
+    print("Medicine DB ON")
     medicine.start_medicine_info_db()
+    print("Medicine Info DB ON")
     medicine.check_expire_date()
+    print("Medicine Checking expire date Succeed")
     medicine.start_rfid_scanning()
+    print("RFID Scanning now")
     treatment.start_db()
+    print("Treatment DB ON")
 
     NUMBER_OF_IMAGE_BUTTON = 0
     window = Toplevel()

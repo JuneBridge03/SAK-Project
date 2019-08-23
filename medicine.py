@@ -334,7 +334,7 @@ def check_expire_date():  # TODO
     window.title('Medicine Expired list - SAK')
     window.resizable(False, False)
     expired_list = Listbox(
-        window, selectmode='extended', width=window.winfo_screenwidth() / 5, height=window.winfo_screenheight() / 5, yscrollcommand=True) 
+        window, selectmode='extended', width=int(window.winfo_screenwidth() / 5), height=int(window.winfo_screenheight() / 5), yscrollcommand=True) 
     i = 0
     for medicine in get_medicines():
         times = medicine[3].split("/")
