@@ -1,5 +1,6 @@
 from tkinter import Tk, Label
 import sak_gpio
+import threading
 
 window = None
 
@@ -22,9 +23,5 @@ def start_gui():
 
 def beep_repeat():
     global window
-    make_beep_sound()
-    window.after(int(600), beep_repeat)
-
-
-def make_beep_sound():
-    sak_gpio.out_beep_sound(0.3)
+    thr = threading.Thread(sak_gpio.out_beep_sound, args=0.6)
+    thr.start()

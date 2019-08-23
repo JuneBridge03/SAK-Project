@@ -1,10 +1,12 @@
-from tkinter import Label, Canvas, Tk, Listbox, Entry, Button, StringVar, Frame, Scrollbar
+from tkinter import Label, Tk, Listbox, Entry, Button, StringVar, Frame, Scrollbar
 import math
 import sqlite3
 from sak_setting import RESOURCE_DIR_PATH
 import time
 import datetime
 import asyncio
+import urllib.request as urllib
+import json
 from pirc522 import RFID
 
 ids = []
@@ -85,7 +87,7 @@ def rfid_scan(rfid_id: int):
         window.destroy()
 
 
-def rfid_register(rfid_id: int):
+def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
     window = Tk()
     window.geometry(str(int(window.winfo_screenwidth() / 4)) + "x" +
                     str(int(window.winfo_screenheight() / 3)) + "+0+0")
@@ -95,8 +97,39 @@ def rfid_register(rfid_id: int):
     Label(window, text="New Rfid recognized! plz register it now!",
           font=("Purisa", 15)).pack()
     Label(window, text="Name").pack()
-    name_entry = Entry(window)
-    name_entry.pack()
+    name_var = StringVar(window)
+    medicine_info_id = None
+
+    def choose_medicine():
+        l = {}
+        list_window = Tk()
+        list_window.geometry("50x50")
+        frame = Frame(list_window)
+        scrollbar = Scrollbar(frame)
+        scrollbar.pack(side="right", fill="y")
+        listbox = Listbox(frame, yscrollcommand=scrollbar.set)
+        for minfo in get_medicine_infos(): #id, name, tags, doc
+            i = len(l)
+            listbox.insert(i, minfo[1])
+            l[str(i)] = minfo[0]
+
+        def celected(id):
+            minfo_id = l[str(i)]
+            minfo = get_medicine_info(minfo_id)
+            name_var.set(minfo[1])
+            medicine_info_id = minfo_id
+            list_window.quit()
+            list_window.destroy()
+        
+        listbox.bind("<<ListboxSelect>>", lambda event: celected(str(event.widget.curselection()[0])))
+        listbox.pack(side="left")
+        scrollbar["command"] = listbox.yview
+        frame.pack()
+        list_window.mainloop()
+
+    Button(window, text="Choose Medicine", command=choose_medicine).pack()
+    Label(window, text="", textvariable=name_var).pack()
+
 
     expire_date = StringVar(window)
 
@@ -167,7 +200,7 @@ def rfid_register(rfid_id: int):
     Label(window, text="", textvariable=expire_date).pack()
 
     def master_done():
-        register_medicine(name_entry.get(), expire_date.get(), rfid_id)
+        register_medicine(medicine_info_id, expire_date.get(), rfid_id)
         window.quit()
         window.destroy()
 
@@ -223,60 +256,77 @@ def start_db():
                     "medicine("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                     "rfid_id INTEGER NOT NULL,"
-                    "name TEXT NOT NULL,"
+                    "document_id INTEGER NOT NULL," #name & document -> document id
                     "expire_date TEXT NOT NULL,"
-                    "document TEXT,"
                     "now_exist INTEGER DEFAULT 1 NOT NULL)"
                     )
     conn.commit()
     conn.close()
 
 
-def get_medicines():
+def get_medicines(for_old_version: bool = True):
     conn = sqlite3.connect(RESOURCE_DIR_PATH +
                            'medicine.db')
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, rfid_id, name, expire_date, document, now_exist FROM medicine")
+        "SELECT id, rfid_id, document_id, expire_date, now_exist FROM medicine")
     rows = cur.fetchall()
     conn.close()
-    return rows
+    if for_old_version:
+        rews = []
+        for row in rows:
+            rews.append(convert_as_older_version(row))
+        return rews
+    else:
+        return rows
 
 
-def get_medicine(medicine_id: int):
+def get_medicine(medicine_id: int, for_old_version: bool = True):
     conn = sqlite3.connect(RESOURCE_DIR_PATH +
                            'medicine.db')
     cur = conn.cursor()
-    cur.execute("SELECT id, rfid_id, name, expire_date, document, now_exist FROM medicine WHERE rfid_id = ?", [
+    cur.execute("SELECT id, rfid_id, document_id, expire_date, now_exist FROM medicine WHERE rfid_id = ?", [
                 medicine_id])
     rows = cur.fetchall()
     conn.close()
     if len(rows) <= 0:
         return False
-    return rows[0]
+    if for_old_version:
+        return convert_as_older_version(rows[0])
+    else:
+        return rows[0]
 
 
-def get_medicine_by_id(id: int):
+def get_medicine_by_id(id: int, for_old_version: bool = True):
     conn = sqlite3.connect(RESOURCE_DIR_PATH +
                            'medicine.db')
     cur = conn.cursor()
-    cur.execute("SELECT id, rfid_id, name, expire_date, document, now_exist FROM medicine WHERE id = ?", [
+    cur.execute("SELECT id, rfid_id, document_id, expire_date, document, FROM medicine WHERE id = ?", [
                 id])
     rows = cur.fetchall()
     conn.close()
     if len(rows) <= 0:
         return False
-    return rows[0]
+    if for_old_version:
+        return convert_as_older_version(rows[0])
+    else:
+        return rows[0]
 
 
-def register_medicine(name: str, expire_date: str, rfid_id: int):
+def register_medicine(document_id: int, expire_date: str, rfid_id: int):
     conn = sqlite3.connect(RESOURCE_DIR_PATH +
                            'medicine.db')  # get medicine data
     cur = conn.cursor()
-    cur.execute("INSERT INTO medicine(rfid_id, name, expire_date) VALUES (?, ?, ?)", [
-                rfid_id, name, expire_date])
+    cur.execute("INSERT INTO medicine(rfid_id, document_id, expire_date) VALUES (?, ?, ?)", [
+                rfid_id, document_id, expire_date])
     conn.commit()
     conn.close()
+
+def convert_as_older_version(medicine): # Warning! Dont use this function
+    document = get_medicine_info(medicine[2])
+    name = document[1]
+    document = document[3]
+    return [medicine[0], medicine[1], name, medicine[3], document, medicine[4]]
 
 
 expire_ids = []
@@ -308,3 +358,84 @@ def check_expire_date():  # TODO
             int(event.widget.curselection()[0])]))
         expired_list.pack()
         window.mainloop()
+    else:
+        window.quit()
+        window.destroy()
+
+
+def start_medicine_info_db():
+    conn = sqlite3.connect(RESOURCE_DIR_PATH + 'medicine.db')
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='medicine_info'")  # Table Name is 'medicine_info'
+    rows = cur.fetchall()
+    is_exist = False
+    for row in rows:
+        if row[0] == "medicine_info":
+            is_exist = True
+            break
+    if not is_exist:  # If Table is not exist, we will create table
+        cur.execute("CREATE TABLE "
+                    "medicine_info("
+                    "id INTEGER PRIMARY KEY,"
+                    "name TEXT NOT NULL,"
+                    "tags TEXT NOT NULL, document TEXT NOT NULL,"
+                    "version INTEGER NOT NULL)"
+                    )
+    conn.commit()
+    conn.close()
+
+
+def get_medicine_infos():
+    conn = sqlite3.connect(RESOURCE_DIR_PATH +
+                           'medicine.db')
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, tags, document, version FROM medicine_info")
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+def get_medicine_info(id: int):
+    conn = sqlite3.connect(RESOURCE_DIR_PATH +
+                           'medicine.db')
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, tags, document, version FROM medicine_info WHERE id = ?", [id])
+    rows = cur.fetchall()
+    conn.close()
+    if len(rows) <= 0:
+        return False
+    return rows[0]
+
+
+def register_medicine_info(id: int, name: str, tags: str, document: str, version: int):
+    conn = sqlite3.connect(RESOURCE_DIR_PATH +
+                           'medicine.db')  # get medicine data
+    cur = conn.cursor()
+    cur.execute("INSERT INTO medicine_info(id, name, tags, document, version) VALUES (?, ?, ?, ?, ?)", [id, name, tags, document, version])
+    conn.commit()
+    conn.close()
+
+
+def delete_medicine_info(medicine_id: int):
+    conn = sqlite3.connect(RESOURCE_DIR_PATH +
+                           'medicine.db')  # get treatment data
+    cur = conn.cursor()
+    cur.execute("DELETE FROM medicine_info WHERE id = ?", [
+        medicine_id])
+    conn.commit()
+    conn.close()
+
+def update_medicine_info():
+    data = urllib.urlopen("http://sak-project.ml/medicine_info.json").read() # id : version
+    data = json.loads(data)
+    for (k, v) in data.items():
+        medicine = get_medicine_info(k)
+        if not medicine or medicine[4] < v:
+            medicine_update(k)
+
+def medicine_update(medicine_id):
+    data = urllib.urlopen("http://sak-project.ml/medicine_" +
+                          str(medicine_id)+".json").read()
+    delete_medicine_info(medicine_id)
+    register_medicine_info(medicine_id, data["name"], data["tags"], data["document"], data["version"])

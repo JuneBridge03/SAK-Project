@@ -10,11 +10,12 @@ def set_gpios():
     GPIO.setup(sak_setting.GPIO_BUTTON, GPIO.IN)
 
 
-def get_from_adc(bus_num = 0, device_num: int = 0, channel: int = 0):
+def get_from_adc(bus_num = 1, device_num: int = 2, channel: int = 0):
     spi = spidev.SpiDev()
     spi.open(bus_num, device_num)
     r = spi.xfer2([1, (8 + channel) << 4, 0])
     acd_out = ((r[1] & 3) << 8) + r[2]
+    spi.close()
     return acd_out
 
 
@@ -25,6 +26,9 @@ def get_bpm():
 def out_beep_sound(sleep_duration: int):
     while True:
         GPIO.output(sak_setting.GPIO_BUZZER, GPIO.HIGH)
-        time.sleep(sleep_duration)
+        time.sleep(0.1)
         GPIO.output(sak_setting.GPIO_BUZZER, GPIO.LOW)
-        time.sleep(sleep_duration)
+        time.sleep(sleep_duration - 0.1)
+
+def get_button():
+        return GPIO.input(sak_setting.GPIO_BUTTON)

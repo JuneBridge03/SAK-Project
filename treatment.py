@@ -128,4 +128,4 @@ def treatments_update():  # By HTML JSON
     for (k, v) in data.items():
         treatment = get_treatment(k)
         if not treatment or treatment[3] < v:
-            treatment_update(v)
+            treatment_update(k)

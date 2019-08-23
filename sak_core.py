@@ -1,7 +1,5 @@
 import os
-from tkinter import Toplevel, Canvas, PhotoImage, CENTER, Label
-import math
-from PIL import Image, ImageTk
+from tkinter import Toplevel, Canvas, Label
 import sak_setting
 
 
@@ -21,6 +19,7 @@ def start_sak_main_window():
     global NUMBER_OF_IMAGE_BUTTON
 
     medicine.start_db()
+    medicine.start_medicine_info_db()
     medicine.check_expire_date()
     medicine.start_rfid_scanning()
     treatment.start_db()
