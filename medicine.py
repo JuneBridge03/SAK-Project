@@ -7,6 +7,7 @@ import datetime
 import asyncio
 import urllib.request as urllib
 import json
+import threading
 from pirc522 import RFID
 
 ids = []
@@ -211,15 +212,9 @@ def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
 
 def start_rfid_scanning():
     reader = RFID()
-    running = True
 
-    def end(signal, frame):
-        global running
-        running = False
-        reader.cleanup()
-
-    async def go():
-       while True:
+    def go():
+        while True:
             reader.wait_for_tag()
             (err, _) = reader.request()
             if err:
@@ -235,9 +230,7 @@ def start_rfid_scanning():
             rfid_scan(int(id))
             time.sleep(1)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(go())
-    loop.close()
+    threading.Thread(go).start()
 
 
 def start_db():

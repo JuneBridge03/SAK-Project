@@ -32,3 +32,7 @@ def out_beep_sound(sleep_duration: int):
 
 def get_button():
         return GPIO.input(sak_setting.GPIO_BUTTON)
+
+
+def gpio_cleanup():
+        GPIO.cleanup()

@@ -1,7 +1,7 @@
 import os
 from tkinter import Toplevel, Canvas, Label
 import sak_setting
-
+import sak_gpio
 
 import medicine
 import treatment
@@ -38,15 +38,15 @@ def start_sak_main_window():
         ("emergency_logo", emergency.start_gui),
         ("cpr_logo", cpr.start_gui),
             ("bpm_logo", bpm.start_gui)]:
-        print(name)
         create_rectangle_button(window, canvas, name, func)
 
     canvas.focus_set()
     canvas.pack()
+    window.protocol("WM_DELETE_WINDOW", sak_gpio.gpio_cleanup)
     window.mainloop()
 
 
-def create_rectangle_button(window: Toplevel, canvas: Canvas, name: str, func) -> Canvas:
+def create_rectangle_button(window: Toplevel, canvas: Canvas, name: str, func):
     side_size = int(window.winfo_screenheight() / 9)
     x, y = get_xy_pos(window)
     rec_id = canvas.create_rectangle(
