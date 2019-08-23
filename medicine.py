@@ -336,8 +336,8 @@ def check_expire_date():  # TODO
     global expire_ids
     expire_ids = []
     window = Tk()
-    window.geometry(str(window.winfo_screenwidth() / 5) + "x" +
-                    str(window.winfo_screenheight() / 5) + "+0+0")
+    window.geometry(str(int(window.winfo_screenwidth() / 5)) + "x" +
+                    str(int(window.winfo_screenheight() / 5)) + "+0+0")
     window.title('Medicine Expired list - SAK')
     window.resizable(False, False)
     expired_list = Listbox(
