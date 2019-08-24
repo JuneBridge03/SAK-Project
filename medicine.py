@@ -8,6 +8,7 @@ import asyncio
 import urllib.request as urllib
 import json
 import threading
+import RPi.GPIO as GPIO
 from pirc522 import RFID
 
 ids = []
@@ -211,7 +212,8 @@ def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
 
 
 def start_rfid_scanning():
-    reader = RFID()
+    reader = RFID(0, 0, 1000000,  25,
+            0, 24, GPIO.BCM)
 
     def go():
         while True:
