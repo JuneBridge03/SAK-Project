@@ -103,6 +103,7 @@ def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
     medicine_info_id = None
 
     def choose_medicine():
+        global medicine_info_id
         l = {}
         list_window = Tk()
         list_window.geometry("50x50")
@@ -116,10 +117,12 @@ def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
             l[str(i)] = minfo[0]
 
         def celected(id):
+            global medicine_info_id
             minfo_id = l[str(i)]
             minfo = get_medicine_info(minfo_id)
             name_var.set(minfo[1])
             medicine_info_id = minfo_id
+            print(medicine_info_id)
             list_window.quit()
             list_window.destroy()
         
@@ -159,7 +162,7 @@ def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
             if time_inf == 2:
                 mon_day = {"1": 31, "2": 29, "3": 31, "4": 30, "5": 31, "6": 30,
                            "7": 31, "8": 31, "9": 30, "10": 31, "11": 30, "12": 31}
-                ll = range(1, mon_day[month_text.get()] + 1)
+                ll = range(1, mon_day[str(int(month_text.get()))] + 1)
             for l in ll:
                 listbox.insert(l, str(l))
 
@@ -182,12 +185,13 @@ def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
             frame.pack()
             list_window.mainloop()
 
-        for v in [
-            ["Year", year_text, 0],
-            ["Month", month_text, 1],
-                ["Day", day_text, 2]]:
-            Button(date_window, text="Choose " + v[0], relief="solid", textvariable=v[1],
-                   command=lambda: choose(v[2]), bd=2).pack()
+        Button(date_window, text="Choose Year", relief="solid", textvariable=year_text,
+                  command=lambda: choose(0), bd=2).pack()
+        Button(date_window, text="Choose Month", relief="solid", textvariable=month_text,
+                  command=lambda: choose(1), bd=2).pack()
+        Button(date_window, text="Choose Day", relief="solid", textvariable=day_text,
+                  command=lambda: choose(2), bd=2).pack()
+
 
         def done():
             expire_date.set(year_text.get() + "/" +
@@ -202,6 +206,8 @@ def rfid_register(rfid_id: int): #TODO use medicine db with medicine info db
     Label(window, text="", textvariable=expire_date).pack()
 
     def master_done():
+        global medicine_info_id
+        print(medicine_info_id)
         register_medicine(medicine_info_id, expire_date.get(), rfid_id)
         window.quit()
         window.destroy()
@@ -296,7 +302,7 @@ def get_medicine_by_id(id: int, for_old_version: bool = True):
     conn = sqlite3.connect(RESOURCE_DIR_PATH +
                            'medicine.db')
     cur = conn.cursor()
-    cur.execute("SELECT id, rfid_id, document_id, expire_date, document, FROM medicine WHERE id = ?", [
+    cur.execute("SELECT id, rfid_id, document_id, expire_date, now_exist FROM medicine WHERE id = ?", [
                 id])
     rows = cur.fetchall()
     conn.close()
@@ -341,7 +347,7 @@ def check_expire_date():  # TODO
     for medicine in get_medicines():
         times = medicine[3].split("/")
         times = time.mktime(datetime.date(
-            times[0], times[1], times[2]).timetuple())
+            int(times[0]), int(times[1]), int(times[2])).timetuple())
         if int(time.time()) >= times:
             expire_ids.insert(i, medicine[0])
             expired_list.insert(

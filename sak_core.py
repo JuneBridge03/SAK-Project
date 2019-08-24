@@ -1,5 +1,6 @@
 import os
 from tkinter import Toplevel, Canvas, Label
+import threading
 import sak_setting
 import sak_gpio
 
@@ -17,12 +18,13 @@ RESOURCE_DIR_PATH = sak_setting.RESOURCE_DIR_PATH
 
 def start_sak_main_window():
     global NUMBER_OF_IMAGE_BUTTON
-
+    
+    sak_gpio.set_gpios()
     medicine.start_db()
     print("Medicine DB ON")
     medicine.start_medicine_info_db()
     print("Medicine Info DB ON")
-    medicine.check_expire_date()
+    threading.Thread(target = medicine.check_expire_date).start()
     print("Medicine Checking expire date Succeed")
     medicine.start_rfid_scanning()
     print("RFID Scanning now")

@@ -23,5 +23,5 @@ def start_gui():
 
 def beep_repeat():
     global window
-    thr = threading.Thread(sak_gpio.out_beep_sound, args=0.6)
+    thr = threading.Thread(target=sak_gpio.out_beep_sound)
     thr.start()
